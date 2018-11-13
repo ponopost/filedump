@@ -1,0 +1,201 @@
+<html>
+<head>
+<style>
+	table.scrollTable {
+		border: solid 1px #000000;
+		border-spacing: 2px 2px;
+	}
+
+	thead.scrollHead, tbody.scrollBody {
+		display: block;
+	}
+
+	thead.scrollHead {
+		background-color: #ddd;
+	}
+
+	tbody.scrollBody {
+		overflow-y: scroll;
+		height: 500px;
+	}
+
+	td, th {
+		table-layout: fixed;
+	}
+</style>
+</head>
+<body>
+
+<div>
+FILE: <input id="file" name="file" type="file" /><br>
+name: <span id="name"></span><br>
+type: <span id="type"></span><br>
+size: <span id="size"></span><br>
+</div>
+<br>
+
+<code>
+<table id="scrollTable" class="scrollTable" border="0">
+	<thead id="tableHead" class="scrollHead">
+		<tr>
+			<td>address.</td>
+			<td>&nbsp;</td>
+			<td>+0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F</td>
+			<td>&nbsp;</td>
+			<td>0123456789ABCDEF</td>
+		</tr>
+	</thead>
+	<tbody id="tableBody" class="scrollBody">
+		<tr><td></td><td></td><td></td><td></td></tr>
+	</tbody>
+</table>
+</code>
+<br>
+<br>
+
+<code>
+<div id="header"></div>
+<div id="result"></div>
+</code>
+<br>
+
+
+<script>
+
+(function() {
+
+	var inputFile = document.getElementById("file");
+	var reader = new FileReader();
+
+	inputFile.addEventListener("change", fileChange, false);
+	reader.addEventListener('load', fileLoad, false);
+
+	function escapeHtml(str){
+		str = str.replace(/&/g, '&amp;');	// &
+		str = str.replace(/>/g, '&gt;');	// >
+		str = str.replace(/</g, '&lt;');	// <
+		str = str.replace(/"/g, '&quot;');	// "
+		str = str.replace(/'/g, '&#x27;');	// '
+		str = str.replace(/`/g, '&#x60;');	// `
+		return str;
+	}
+
+	function tableAllDelete(){
+		var table = document.getElementById("scrollTable");
+	    var len = table.rows.length;
+		for (var i = (len - 1); i > 1; i--){
+			table.deleteRow(i);
+		}
+
+		table.scrollTop = 0;
+	}
+
+	function fileChange(event){
+		var target = event.target;
+		var file = target.files[0];
+
+		document.querySelector('#name').innerHTML = file.name;
+		document.querySelector('#type').innerHTML = file.type;
+		document.querySelector('#size').innerHTML = file.size + " Bytes";
+
+		if (file.size > (1024*200)){
+			alert('ファイルサイズが200Kバイトを超えています。200Kバイト以下のファイルを選択してください。');
+		} else {
+			reader.readAsArrayBuffer(file);
+		}
+	}
+
+	function fileLoad(){
+		// console.log(reader.result);
+
+		tableAllDelete();
+
+		var bytes = new Uint8Array(reader.result);
+
+		var hdr;
+		hdr =  "ADDRESS : +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F  0123456789ABCDEF\n";
+		hdr += "--------- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --  ----------------\n";
+		// document.querySelector('#header').innerText = hdr;
+
+		var txt = "";
+		var adr;
+		var dmp;
+		var hex;
+		var asc;
+		var j = 0;
+		for (var i = 0; i < bytes.byteLength; i++){
+			if (j == 0){
+				adr = ("0000000" + i.toString(16)).toUpperCase().substr(-8);
+				txt += adr;
+				txt += ": ";
+				dmp = "";
+				asc = "";
+			}
+			hex = ("0" + bytes[i].toString(16)).toUpperCase().substr(-2);
+
+			txt += hex;
+			txt += " ";
+
+			dmp += hex;
+			dmp += " ";
+
+			if ((bytes[i] >= 0x20) && (bytes[i] <= 0x7E)){
+				asc += escapeHtml(String.fromCharCode(bytes[i]));
+			} else {
+				asc += "<span style=color:#ccc>.</span>";
+			}
+
+			j++;
+			if (j >= 16){
+
+				var table = document.getElementById("scrollTable");
+				var row = table.insertRow(-1);
+				var cell1 = row.insertCell(-1);
+				var cell2 = row.insertCell(-1);
+				var cell3 = row.insertCell(-1);
+				var cell4 = row.insertCell(-1);
+				var cell5 = row.insertCell(-1);
+
+				cell1.innerHTML = adr;
+				cell2.innerHTML = "&nbsp;";
+				cell3.innerHTML = dmp;
+				cell4.innerHTML = "&nbsp;";
+				cell5.innerHTML = asc;
+
+				txt += "  ";
+				txt += asc;
+				txt += "\n";
+				j = 0;
+			}
+		}
+
+		if (j > 0){
+			var table = document.getElementById("scrollTable");
+			var row = table.insertRow(-1);
+			var cell1 = row.insertCell(-1);
+			var cell2 = row.insertCell(-1);
+			var cell3 = row.insertCell(-1);
+			var cell4 = row.insertCell(-1);
+			var cell5 = row.insertCell(-1);
+
+			cell1.innerHTML = adr;
+			cell2.innerHTML = "&nbsp;";
+			cell3.innerHTML = dmp;
+			cell4.innerHTML = "&nbsp;";
+			cell5.innerHTML = asc;
+
+			txt += "  ";
+			txt += asc;
+			txt += "\n";
+		}
+
+		txt += "\n";
+
+		// document.querySelector('#result').innerText = txt;
+	}
+
+}());
+
+</script>
+</body>
+</html>
